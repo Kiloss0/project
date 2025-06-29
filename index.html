@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>ToDo List</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      background-color: #f4f4f4;
+      max-width: 600px;
+      margin: 40px auto;
+      padding: 20px;
+      background: white;
+      border-radius: 8px;
+      box-shadow: 0 0 10px rgba(0,0,0,0.1);
+    }
+    h1 { text-align: center; }
+    #task-form input {
+      width: 80%;
+      padding: 10px;
+      font-size: 16px;
+    }
+    #task-form button {
+      padding: 10px;
+      font-size: 16px;
+    }
+    ul {
+      list-style: none;
+      padding: 0;
+    }
+    li {
+      padding: 10px;
+      margin-top: 10px;
+      background: #eee;
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      border-radius: 4px;
+    }
+    .completed {
+      text-decoration: line-through;
+      color: gray;
+    }
+  </style>
+</head>
+<body>
+  <h1>Список завдань</h1>
+  <form id="task-form">
+    <input type="text" id="new-task" placeholder="Нове завдання...">
+    <button type="submit">Додати</button>
+  </form>
+  <ul id="task-list"></ul>
+  <script>
+    const API = 'http://127.0.0.1:5000/tasks';
+    const form = document.getElementById('task-form');
+    const taskInput = document.getElementById('new-task');
+    const taskList = document.getElementById('task-list');
+
+    async function fetchTasks() {
+      const res = await fetch(API);
+      const tasks = await res.json();
+      renderTasks(tasks);
+    }
+
+    async function addTask(text) {
+      await fetch(API, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text }),
+      });
+      fetchTasks();
+    }
+
+    async function updateTask(index, completed) {
+      await fetch(`${API}/${index}`, {
+        method: 'PUT',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ completed }),
+      });
+      fetchTasks();
+    }
+
+    async function deleteTask(index) {
+      await fetch(`${API}/${index}`, {
+        method: 'DELETE',
+      });
+      fetchTasks();
+    }
+
+    function renderTasks(tasks) {
+      taskList.innerHTML = '';
+      tasks.forEach((task, index) => {
+        const li = document.createElement('li');
+        if (task.completed) li.classList.add('completed');
+
+        const span = document.createElement('span');
+        span.textContent = task.text;
+        span.onclick = () => updateTask(index, !task.completed);
+
+        const btn = document.createElement('button');
+        btn.textContent = 'Видалити';
+        btn.onclick = () => deleteTask(index);
+
+        li.appendChild(span);
+        li.appendChild(btn);
+        taskList.appendChild(li);
+      });
+    }
+
+    form.onsubmit = e => {
+      e.preventDefault();
+      const text = taskInput.value.trim();
+      if (text) {
+        addTask(text);
+        taskInput.value = '';
+      }
+    };
+
+    fetchTasks();
+  </script>
+</body>
+</html>
